@@ -1,0 +1,62 @@
+<nav class="navbar-custom d-flex justify-content-between align-items-center px-4">
+
+  <!-- LEFT SIDE: LOGO + NAME -->
+  <div class="navbar-left d-flex align-items-center" style="gap:12px;">
+    <img src="/images/logo.png" class="nav-logo" alt="Logo">
+    <span class="nav-title">Medora Laboratory</span>
+  </div>
+
+  <!-- RIGHT SIDE: NAV LINKS -->
+  <div class="navbar-right d-flex align-items-center">
+    <a href="/admin/dashboard" class="nav-item-custom">Dashboard</a>
+    <a href="/admin/pending-tests" class="nav-item-custom">Pending Tests</a>
+    <a href="/admin/manage-test-types" class="nav-item-custom">Test Types</a>
+    <a href="/admin/billing" class="nav-item-custom">Billing</a>
+    <a href="/logout" class="nav-item-custom">Logout</a>
+  </div>
+
+</nav>
+
+
+<style>
+  .navbar-custom {
+    width: 100%;
+    background: #000;
+    height: 80px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .nav-logo {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+  }
+
+  .nav-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+    white-space: nowrap;
+  }
+
+  .navbar-right {
+    display: flex;
+    gap: 35px;
+  }
+
+  .nav-item-custom {
+    color: #fff;
+    text-decoration: none;
+    font-size: 17px;
+    font-weight: 500;
+    padding: 10px 16px;
+    border-radius: 6px;
+    transition: 0.3s ease;
+  }
+
+  .nav-item-custom:hover {
+    background: #222;
+  }
+</style> ,include in this na

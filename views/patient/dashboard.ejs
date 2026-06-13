@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Patient Dashboard</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/swiper@9/swiper-bundle.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      background:#f2fbf8;
+      font-family:Inter, Arial, sans-serif;
+      color:#052c2a;
+      margin:0;
+    }
+
+    .sidebar {
+      width:250px;
+      position:fixed;
+      top:0; left:0; bottom:0;
+      background:linear-gradient(180deg,#0a74ff,#0066d6);
+      color:#fff;
+      padding:24px;
+    }
+    .sidebar nav a {
+      color:#fff;
+      opacity:0.9;
+      display:block;
+      padding:10px 0;
+      text-decoration:none;
+    }
+    .sidebar nav a.active { font-weight:600; }
+
+    .main {
+      margin-left:250px;
+      padding:28px;
+    }
+    .card {
+      border-radius:14px;
+      background:#fff;
+      box-shadow:0 10px 30px rgba(0,0,0,0.05);
+    }
+
+    /* banner */
+    .banner-full {
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+      height: 150px;
+    }
+    .banner-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+    .banner-content {
+      position: absolute;
+      bottom: 15px;
+      left: 20px;
+      color: white;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.45);
+    }
+    .banner-content h4 { margin: 0; font-size: 22px; font-weight: 700; }
+    .banner-content p { margin: 2px 0 8px; font-size: 14px; opacity: 0.9; }
+
+    .image { background-repeat:no-repeat !important; background-size:cover !important; background-position:center !important; }
+
+    .avail-card {
+      border-radius:12px;
+      overflow:hidden;
+      background:#fff;
+      height:230px;
+      display:flex;
+      flex-direction:column;
+      box-shadow:0 8px 24px rgba(0,0,0,0.06);
+    }
+    .avail-card .image { height:120px; }
+    .avail-card .body { padding:12px; }
+
+    .upcoming-grid {
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:14px;
+    }
+    .up-card {
+      border-radius:14px;
+      height:170px;
+      padding:14px;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-end;
+      background-size:cover;
+      background-position:center;
+      position:relative;
+      color:#fff;
+    }
+    .up-card::after {
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(to top, rgba(0,0,0,.25), transparent);
+      border-radius:14px;
+    }
+    .up-card * { position:relative; z-index:2; }
+
+    .status-badge {
+      background:#ffe9b6 !important;
+      color:#664400 !important;
+      padding:4px 10px;
+      border-radius:10px;
+      font-weight:600;
+      font-size:12px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    @media (max-width: 992px) {
+      .main { padding:18px; }
+      .upcoming-grid { grid-template-columns: repeat(2, 1fr); }
+      .swiper .swiper-slide { width: auto !important; }
+    }
+
+    @media (max-width: 576px) {
+      .sidebar { display:none; }
+      .main { margin-left:0; padding:12px; }
+      .upcoming-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo fw-bold mb-3">Medora • Patient</div>
+  <nav>
+    <a class="active" href="/patient/dashboard"><i class="bi bi-house"></i> Dashboard</a>
+    <a href="/patient/book"><i class="bi bi-calendar-plus"></i> Book Test</a>
+    <a href="/patient/history"><i class="bi bi-clock-history"></i> Test History</a>
+    <a href="/patient/reports"><i class="bi bi-file-earmark-medical"></i> Lab Reports</a>
+    <a href="/patient/profile"><i class="bi bi-person"></i> Profile</a>
+    <a href="/logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+  </nav>
+</aside>
+
+<main class="main">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3>Welcome back, <%= user ? user.name : "Patient" %></h3>
+      <small>Your tests & reports — smart, simple and safe.</small>
+    </div>
+
+    <div class="d-flex gap-4">
+      <div class="text-end">
+        <small class="text-muted">Upcoming</small>
+        <div class="fw-bold"><%= upcomingCount || 0 %> Tests</div>
+      </div>
+      <div class="text-end">
+        <small class="text-muted">Reports</small>
+        <div class="fw-bold"><%= reportCount || 0 %></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+
+    <div class="col-lg-8">
+
+      <!-- banner -->
+      <div class="card banner-full mb-3">
+        <img src="/assets/ban.png" class="banner-img" alt="banner">
+        <div class="banner-content">
+        
+          <a href="/patient/book" class="btn btn-primary">Book Now</a>
+        </div>
+      </div>
+
+      <h6>Available Tests</h6>
+      <div class="swiper mySwiper">
+        <div class="swiper-wrapper">
+
+          <% availableTests.forEach(at => { 
+              // default fallback image (banner.png present in assets)
+              let img = "banner.png";
+              let n = (at.name || '').toLowerCase();
+
+              // ---- stable, prioritized matching ----
+              if (n.includes("cbc") || n.includes("complete blood count"))
+                  img = "CBC.png";
+
+              else if (n.includes("t3") || n.includes("t4") || n.includes("tsh") || n.includes("thyroid profile"))
+                  img = "Ts,T4,Tfs.png";
+
+              else if (n.includes("thyroid"))
+                  img = "Thyroid.png";
+
+              else if (n.includes("blood sugar") || n.includes("fasting") || n.includes("glucose"))
+                  img = "bloodtest.png";
+
+              else if (n.includes("lipid"))
+                  img = "lipid_profile.png";
+
+              else if (n.includes("liver") || n.includes("lft"))
+                  img = "liver_function.png";
+
+              else if (n.includes("urine"))
+                  img = "urine_test.png";
+          %>
+
+            <div class="swiper-slide">
+              <div class="avail-card">
+                <div class="image" style="background-image:url('/assets/<%= img %>')" aria-hidden="true"></div>
+
+                <div class="body">
+                  <h6><%= at.name %></h6>
+                  <p class="text-muted" style="min-height:36px;"><%= at.description %></p>
+
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted">₹ <%= at.price %></span>
+                    <a href="/patient/book?test=<%= at._id %>" class="btn btn-sm btn-primary">Book</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          <% }); %>
+
+        </div>
+      </div>
+
+      <h6 class="mt-4">Upcoming Tests</h6>
+      <div class="upcoming-grid">
+
+        <% upcomingTests.forEach(t => { 
+            let uimg = "banner.png";
+            let n = (t.testType && t.testType.name ? t.testType.name : '').toLowerCase();
+
+            if (n.includes("cbc") || n.includes("complete blood count"))
+                uimg = "CBC.png";
+
+            else if (n.includes("t3") || n.includes("t4") || n.includes("tsh") || n.includes("thyroid profile"))
+                uimg = "Ts,T4,Tfs.png";
+
+            else if (n.includes("thyroid"))
+                uimg = "Thyroid.png";
+
+            else if (n.includes("blood sugar") || n.includes("fasting") || n.includes("glucose"))
+                uimg = "bloodtest.png";
+
+            else if (n.includes("lipid"))
+                uimg = "lipid_profile.png";
+
+            else if (n.includes("liver") || n.includes("lft"))
+                uimg = "liver_function.png";
+
+            else if (n.includes("urine"))
+                uimg = "urine_test.png";
+        %>
+
+          <div class="up-card" style="background-image:url('/assets/<%= uimg %>');">
+            <h6><%= t.testType.name %></h6>
+            <small><%= t.testType.description %></small>
+
+            <div class="small mt-1">
+              <i class="bi bi-calendar2-event"></i>
+              <%= t.scheduledDate ? new Date(t.scheduledDate).toLocaleDateString() : "Invalid Date" %>
+            </div>
+
+            <div class="d-flex justify-content-between mt-2">
+              <span class="status-badge"><%= t.status %></span>
+              <a href="/patient/report/<%= t._id %>" class="btn btn-sm btn-light">View</a>
+            </div>
+          </div>
+
+        <% }); %>
+
+      </div>
+
+    </div>
+
+    <div class="col-lg-4">
+
+      <div class="card p-3 mb-3">
+        <h6>Statistics</h6>
+        <div class="d-flex justify-content-between">
+          <div>
+            <small>Total Tests</small>
+            <div class="fw-bold"><%= stats && stats.totalTests ? stats.totalTests : 0 %></div>
+          </div>
+          <div style="width:110px;height:110px;"><canvas id="donutChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card p-3 mb-3">
+        <h6>❤️ Heart Rate Monitor</h6>
+        <input id="heartInput" type="number" class="form-control" placeholder="Enter heart rate">
+        <button class="btn btn-danger w-100 mt-2" onclick="addHeartRate()">Add Reading</button>
+        <canvas id="heartChart" height="120"></canvas>
+      </div>
+
+      <div class="card p-3 mb-3">
+        <h6>BMI Calculator</h6>
+        <input id="height" type="number" class="form-control" placeholder="Height (cm)">
+        <input id="weight" type="number" class="form-control mt-2" placeholder="Weight (kg)">
+        <button class="btn btn-success w-100 mt-2" onclick="calcBMI()">Calculate</button>
+        <div id="bmiResult" class="mt-2"></div>
+        <canvas id="bmiChart" height="120"></canvas>
+      </div>
+
+    </div>
+
+  </div>
+
+</main>
+
+<script src="https://unpkg.com/swiper@9/swiper-bundle.min.js"></script>
+
+<script>
+new Swiper('.mySwiper', {
+  slidesPerView: 4,
+  spaceBetween: 14,
+  breakpoints: {
+    1200: { slidesPerView: 4 },
+    900: { slidesPerView: 3 },
+    600: { slidesPerView: 2 },
+    0: { slidesPerView: 1 }
+  }
+});
+
+// donut chart (server-provided donutData expected)
+new Chart(document.getElementById("donutChart"), {
+  type: "doughnut",
+  data: {
+    labels: ["Pending","Completed"],
+    datasets: [{
+      data: <%- JSON.stringify(donutData && donutData.values ? donutData.values : [0,0]) %>,
+      backgroundColor: ["#00c6a7","#d1f7ef"]
+    }]
+  }
+});
+
+let heartData=[], heartLabels=[];
+const heartChart=new Chart(document.getElementById("heartChart"),{
+  type:"line",
+  data:{labels:heartLabels,datasets:[{data:heartData,borderColor:"#ff4d4d",borderWidth:2,fill:false}]},
+  options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
+});
+function addHeartRate(){
+  let v=+document.getElementById("heartInput").value;
+  if(!v) return;
+  heartData.push(v);
+  heartLabels.push(heartLabels.length+1);
+  heartChart.update();
+  document.getElementById("heartInput").value = '';
+}
+
+const bmiChart=new Chart(document.getElementById("bmiChart"),{
+  type:"bar",
+  data:{labels:["Underweight","Normal","Overweight","Obese"],datasets:[{data:[0,0,0,0]}]},
+  options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
+});
+function calcBMI(){
+  let h=document.getElementById('height').value, w=document.getElementById('weight').value;
+  h=+h; w=+w;
+  if(!h||!w) return;
+  let bmi=(w/((h/100)**2));
+  let bmiDisplay=bmi.toFixed(1);
+  let idx=bmi<18.5?0:bmi<25?1:bmi<30?2:3;
+  document.getElementById('bmiResult').innerHTML=`<div class='alert alert-info'>BMI: <b>${bmiDisplay}</b></div>`;
+  bmiChart.data.datasets[0].data=[0,0,0,0];
+  bmiChart.data.datasets[0].data[idx]=1;
+  bmiChart.update();
+}
+</script>
+
+</body>
+</html>

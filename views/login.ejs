@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: #f5f5f5;
+      font-family: "Poppins", sans-serif;
+      padding: 40px;
+    }
+
+    .login-card {
+      max-width: 1300px;
+      min-height: 700px;
+      background: #fff;
+      margin: auto;
+      border-radius: 25px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+      overflow: hidden;
+      display: flex;
+    }
+
+    .left-img {
+      width: 50%;
+    }
+
+    .left-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .form-section {
+      width: 50%;
+      padding: 60px 50px;
+    }
+
+    .toggle-bar {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 40px;
+    }
+
+    .toggle-btn {
+      padding: 12px 25px;
+      font-size: 15px;
+      border-radius: 30px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      margin: 0 10px;
+    }
+
+    .active-toggle {
+      background: #29cc6d;
+      color: #fff;
+    }
+
+    .inactive-toggle {
+      background: transparent;
+      color: #29cc6d;
+      border: 2px solid #29cc6d;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 12px 28px;
+      background: #29cc6d;
+      color: #fff;
+      font-weight: 600;
+      border-radius: 30px;
+      border: none;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .back-btn {
+      text-decoration: none;
+      font-weight: 600;
+      color: #29cc6d;
+      font-size: 17px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="login-card">
+
+  <div class="left-img">
+    <img src="/assets/login.png" alt="Login Image">
+  </div>
+
+  <div class="form-section">
+
+    <% if (message) { %>
+      <div class="alert alert-<%= message.type %>"><%= message.text %></div>
+    <% } %>
+
+    <div class="toggle-bar">
+      <button id="patientBtn" class="toggle-btn active-toggle">Patient Login</button>
+      <button id="adminBtn" class="toggle-btn inactive-toggle">Admin Login</button>
+    </div>
+
+    <!-- PATIENT LOGIN -->
+    <form id="patientForm" method="POST" action="/login">
+      <h3 class="mb-4">Patient Login</h3>
+
+      <div class="mb-3">
+        <label>Email</label>
+        <input required name="email" type="email" class="form-control" />
+      </div>
+
+      <div class="mb-3">
+        <label>Password</label>
+        <input required name="password" type="password" class="form-control" />
+      </div>
+
+      <input type="hidden" name="role" value="patient">
+
+      <button class="login-btn">Login</button>
+
+      <div style="text-align:center; margin-top:15px;">
+        <a href="/" class="back-btn">← Back to Home</a>
+      </div>
+    </form>
+
+    <!-- ADMIN LOGIN -->
+    <form id="adminForm" method="POST" action="/login" style="display:none;">
+      <h3 class="mb-4">Admin Login</h3>
+
+      <div class="mb-3">
+        <label>Admin Email</label>
+        <input required name="email" type="email" class="form-control" />
+      </div>
+
+      <div class="mb-3">
+        <label>Password</label>
+        <input required name="password" type="password" class="form-control" />
+      </div>
+
+      <input type="hidden" name="role" value="admin">
+
+      <button class="login-btn">Login</button>
+
+      <div style="text-align:center; margin-top:15px;">
+        <a href="/" class="back-btn">← Back to Home</a>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+<script>
+  const patientBtn = document.getElementById("patientBtn");
+  const adminBtn = document.getElementById("adminBtn");
+
+  const patientForm = document.getElementById("patientForm");
+  const adminForm = document.getElementById("adminForm");
+
+  adminBtn.onclick = () => {
+    adminForm.style.display = "block";
+    patientForm.style.display = "none";
+
+    adminBtn.classList.add("active-toggle");
+    adminBtn.classList.remove("inactive-toggle");
+
+    patientBtn.classList.add("inactive-toggle");
+    patientBtn.classList.remove("active-toggle");
+  };
+
+  patientBtn.onclick = () => {
+    adminForm.style.display = "none";
+    patientForm.style.display = "block";
+
+    patientBtn.classList.add("active-toggle");
+    patientBtn.classList.remove("inactive-toggle");
+
+    adminBtn.classList.add("inactive-toggle");
+    adminBtn.classList.remove("active-toggle");
+  };
+</script>
+
+</body>
+</html>

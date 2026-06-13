@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= test.testType.name %> — Report Summary</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"/>
+
+  <style>
+    body { background: #f5f6fa; padding: 28px; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+    .report-card { background: #fff; padding: 28px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.06); max-width: 1150px; margin: auto; }
+    .header-title { font-size: 26px; font-weight: 700; }
+    .sub-text { color: #555; margin-top: 6px; }
+    .badge-normal { background: #28a745; color: #fff; }
+    .badge-warning { background: #ffc107; color: #000; }
+    .badge-serious { background: #dc3545; color: #fff; }
+    .summary-box { background: #f1f8f4; border-left: 4px solid #28a745; padding: 12px; border-radius: 6px; margin-bottom: 18px; }
+  </style>
+</head>
+
+<body>
+  <%- include("../partials/sidebar") %>
+  <div class="report-card">
+
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <div>
+        <div class="header-title"><%= test.testType.name %> — Report Summary</div>
+
+        <div class="sub-text">
+          <b>Patient:</b> <%= user.name %><br>
+          <b>Patient ID:</b> <%= user._id %><br>
+          <b>Scheduled On:</b> <%= test.scheduledAt ? new Date(test.scheduledAt).toLocaleString() : "N/A" %><br>
+          <b>Report Generated:</b> <%= test.reportGeneratedAt ? new Date(test.reportGeneratedAt).toLocaleString() : "N/A" %>
+        </div>
+      </div>
+
+      <div>
+        <img src="/images/logo.png" style="width:120px; opacity:0.95">
+      </div>
+    </div>
+
+    <!-- STATUS BADGE -->
+    <div class="mb-3">
+      <% if (finalStatus === "serious") { %>
+        <span class="badge badge-serious p-2">⚠ Serious — Consult Doctor Immediately</span>
+      <% } else if (finalStatus === "warning") { %>
+        <span class="badge badge-warning p-2">⚠ Slight Imbalance Detected</span>
+      <% } else { %>
+        <span class="badge badge-normal p-2">✔ Normal — All values within limits</span>
+      <% } %>
+    </div>
+
+    <hr>
+
+    <% 
+      // OBSERVATION LOGIC
+      const obs = [];
+      Object.keys(reportValues || {}).forEach(k => {
+        const raw = reportValues[k];
+        const num = Number(raw);
+        const normalStr = getReferenceRange(k);
+
+        if (!isNaN(num) && normalStr.includes("–")) {
+          const [low, high] = normalStr.split("–").map(s => parseFloat(s.replace(/[^\d.]/g,"")));
+          if (num < low) obs.push(`${k.toUpperCase()}: low (${raw} vs ${normalStr})`);
+          if (num > high) obs.push(`${k.toUpperCase()}: high (${raw} vs ${normalStr})`);
+        } else if (!isNaN(num) && normalStr.startsWith("<")) {
+          const bound = parseFloat(normalStr.replace(/[^\d.]/g,""));
+          if (num >= bound) obs.push(`${k.toUpperCase()}: high (${raw} vs ${normalStr})`);
+        }
+      });
+
+      let summaryLines = [];
+      if (obs.length === 0) {
+        summaryLines = ["All parameters are within normal limits.", "No immediate action required."];
+      } else {
+        summaryLines.push(obs[0]);
+        summaryLines.push(obs[1] || "Please consult your physician for further evaluation.");
+      }
+    %>
+
+    <div class="row">
+
+      <!-- LEFT - TABLE -->
+      <div class="col-md-6">
+        <h5><b>Report Details</b></h5>
+
+        <table class="table table-bordered mt-3">
+          <thead class="table-light">
+            <tr>
+              <th>Parameter</th>
+              <th>Your Value</th>
+              <th>Normal Range</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% Object.keys(reportValues || {}).forEach(key => { %>
+              <tr>
+                <td><%= key.toUpperCase() %></td>
+                <td><%= reportValues[key] %></td>
+                <td><%= getReferenceRange(key) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+
+        <div class="summary-box mt-4">
+          <strong>Summary:</strong><br>
+          <%= summaryLines[0] %><br>
+          <%= summaryLines[1] %>
+        </div>
+      </div>
+
+      <!-- RIGHT - SINGLE COMBINED GRAPH -->
+      <div class="col-md-6">
+        <h5><b>Graphical View (Test-wise)</b></h5>
+
+        <canvas id="mainChart" width="400" height="280"></canvas>
+      </div>
+
+    </div>
+
+    <hr>
+
+    <a href="/patient/report-download/<%= test._id %>" class="btn btn-dark">
+      ⬇ Download Full Report (PDF)
+    </a>
+
+  </div>
+
+<script>
+  const labels = <%- JSON.stringify(Object.keys(reportValues || {})) %>;
+  const values = <%- JSON.stringify(Object.values(reportValues || {})) %>;
+
+  new Chart(document.getElementById("mainChart"), {
+    type: "bar",
+    data: {
+      labels: labels.map(l => l.toUpperCase()),
+      datasets: [{
+        label: "Your Values",
+        data: values,
+        backgroundColor: "rgba(54,162,235,0.6)"
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+</script>
+
+</body>
+</html>

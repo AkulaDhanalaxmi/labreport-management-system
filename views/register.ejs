@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: #f5f5f5;
+      font-family: "Poppins", sans-serif;
+      padding: 40px;
+    }
+
+    .login-card {
+      max-width: 1300px;
+      min-height: 700px;
+      background: #fff;
+      margin: auto;
+      border-radius: 25px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+      overflow: hidden;
+      display: flex;
+    }
+
+    .left-img {
+      width: 50%;
+    }
+
+    .left-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .form-section {
+      width: 50%;
+      padding: 60px 50px;
+    }
+
+    /* 🌿 Input green hover and active */
+    .form-control {
+      transition: 0.3s ease;
+    }
+    .form-control:hover {
+      border-color: #29cc6d;
+      box-shadow: 0 0 8px rgba(41,204,109,0.3);
+    }
+    .form-control:focus {
+      border-color: #29cc6d !important;
+      box-shadow: 0 0 10px rgba(41,204,109,0.4) !important;
+    }
+
+    /* Register button */
+    .login-btn {
+      width: 100%;
+      padding: 12px 28px;
+      background: #29cc6d;
+      color: #fff;
+      font-weight: 600;
+      border-radius: 30px;
+      border: none;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    /* Back button */
+    .back-btn {
+      text-decoration: none;
+      font-weight: 600;
+      color: #29cc6d;
+      font-size: 17px;
+      display: block;
+      text-align: center;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="login-card">
+
+  <!-- LEFT IMAGE -->
+  <div class="left-img">
+    <img src="/assets/login.png" alt="Register Image">
+  </div>
+
+  <!-- RIGHT REGISTER AREA -->
+  <div class="form-section">
+
+    <% if (message) { %>
+      <div class="alert alert-<%= message.type %>"><%= message.text %></div>
+    <% } %>
+
+    <!-- ⭐ Center-Aligned Title -->
+    <h3 class="mb-4 text-center" style="color:#29cc6d;"><strong>Patient Register</strong></h3>
+
+    <form method="POST" action="/register">
+
+      <div class="mb-3">
+        <label>Name</label>
+        <input required name="name" class="form-control" />
+      </div>
+
+      <div class="mb-3">
+        <label>Email</label>
+        <input required name="email" type="email" class="form-control" />
+      </div>
+
+      <div class="mb-3">
+        <label>Password</label>
+        <input required name="password" type="password" class="form-control" />
+      </div>
+
+      <input type="hidden" name="role" value="patient">
+
+      <button class="login-btn">Register</button>
+
+      <a href="/" class="back-btn">← Back to Home</a>
+    </form>
+
+  </div>
+</div>
+
+</body>
+</html>

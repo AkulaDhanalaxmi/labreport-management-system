@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pending Reports</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: #f2f4f7;
+      font-family: system-ui, sans-serif;
+      padding: 40px 0;
+    }
+
+    .page-wrap {
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    .title {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 15px;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .report-card {
+      background: #fff;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      border: 1px solid #eaeaea;
+      transition: .2s;
+    }
+
+    .report-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 26px rgba(0,0,0,0.12);
+    }
+
+    .name {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .email {
+      color: #777;
+      font-size: 13px;
+    }
+
+    .meta {
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    .btn-upload {
+      margin-top: 12px;
+      font-weight: 600;
+    }
+    .page-wrap {
+  max-width: 1100px;
+  margin: 80px auto 0 auto; /* top margin pushes content below navbar */
+}
+
+  </style>
+</head>
+
+<body>
+<%- include("../partials/sidebar") %>
+<div class="page-wrap">
+
+  <div class="title">Pending Reports</div>
+  <div class="subtitle">These tests were scheduled. Click any card to upload the report.</div>
+
+
+
+  <div class="cards-grid">
+
+    <% scheduledTests.forEach(function(t){ %>
+      <div class="report-card">
+
+        <div class="name">
+          <%= t.patient?.name %>
+        </div>
+        <div class="email">
+          (<%= t.patient?.email %>)
+        </div>
+
+        <div class="meta">
+          <strong>Test:</strong> <%= t.testType?.name %>
+        </div>
+
+        <div class="meta">
+          <strong>Booked:</strong> <%= new Date(t.bookedAt).toLocaleString() %>
+        </div>
+
+        <div class="meta">
+          <strong>Status:</strong> Scheduled
+        </div>
+
+        <a href="/admin/upload-report/<%= t._id %>" class="btn btn-primary btn-upload btn-sm">
+          View / Upload
+        </a>
+
+      </div>
+    <% }) %>
+
+  </div>
+
+</div>
+
+</body>
+</html>

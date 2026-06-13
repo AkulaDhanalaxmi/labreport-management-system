@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Book Test - Medora</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    body { background:#f6f9fb; font-family: Inter, Arial, sans-serif; color:#15323a; margin:0; }
+    .container-main { max-width:1100px; margin:28px auto; }
+
+    .steps { display:flex; gap:12px; justify-content:center; margin-bottom:20px; }
+    .step { flex:1; text-align:center; padding:12px 18px; border-radius:10px; background:#eef6ff; color:#0553b7; font-weight:600; }
+    .step.active { background:#0a74ff; color:#fff; box-shadow:0 6px 20px rgba(10,116,255,0.12); }
+
+    .page-card { background:#fff; border-radius:12px; padding:22px; box-shadow:0 12px 40px rgba(12,40,34,0.06); }
+    .page-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:18px; }
+    .page-header img { max-width:160px; height:auto; border-radius:10px; }
+
+    /* GRID */
+    .tests-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:18px; }
+
+    /* CARD */
+    .test-card {
+      border-radius:12px;
+      overflow:hidden;
+      background:#fff;
+      box-shadow:0 6px 20px rgba(8,24,35,0.06);
+      display:flex;
+      flex-direction:column;
+      border:2px solid transparent;
+      transition:0.18s;
+      cursor:pointer;
+    }
+    .test-card.selected { border-color:#0a74ff; box-shadow:0 18px 44px rgba(10,116,255,0.14); }
+
+    /* Bigger image */
+    .test-image {
+      height:170px;                     /* ⬅ Increased height */
+      background-size:cover;
+      background-position:center;
+      background-repeat:no-repeat;
+    }
+
+    /* More spacing before text */
+    .test-body {
+      padding:14px;                     /* ⬅ More padding */
+      padding-top:18px;                 /* ⬅ Extra top space so text comes down */
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      min-height:140px;                 /* ⬅ Ensures spacing looks same for all */
+    }
+
+    .test-footer { display:flex; justify-content:space-between; align-items:center; }
+    .price { font-weight:700; color:#0a74ff; }
+  </style>
+
+</head>
+<body>
+
+<%
+function detectImage(name) {
+  name = name.toLowerCase().trim();
+
+  if (name.includes("blood sugar") || name.includes("fasting"))
+    return "/assets/bloodtest.png";
+
+  if (name.includes("cbc") || name.includes("complete blood count"))
+    return "/assets/CBC.png";
+
+  if (name.includes("thyroid profile") || name.includes("t3") || name.includes("t4") || name.includes("tsh"))
+    return "/assets/Ts,T4,Tfs.png";
+
+  if (name.includes("thyroid"))
+    return "/assets/Thyroid.png";
+
+  if (name.includes("lipid") || name.includes("cholesterol"))
+    return "/assets/lipid_profile.png";
+
+  if (name.includes("lft") || name.includes("liver"))
+    return "/assets/liver_function.png";
+
+  if (name.includes("urine"))
+    return "/assets/urine_test.png";
+
+  return "/assets/test_default.png";
+}
+%>
+
+
+<div class="container-main">
+
+  <div class="steps">
+    <div class="step active">1. Choose Test</div>
+    <div class="step">2. Choose Slot</div>
+    <div class="step">3. Confirm</div>
+  </div>
+
+  <div class="page-card">
+
+    <div class="page-header">
+      <div>
+        <h4>Select a Test</h4>
+        <p class="text-muted">Choose from available test packages.</p>
+      </div>
+      <img src="/assets/doctor.png" alt="doctor">
+    </div>
+
+    <form id="bookForm" action="/patient/book/confirm" method="post">
+      <input type="hidden" name="testType" id="testTypeId">
+
+      <div class="tests-grid">
+
+        <% (testTypes || []).forEach(function(tt){ %>
+
+          <div class="test-card" data-id="<%= tt._id %>">
+
+            <div class="test-image"
+                 style="background-image:url('<%= detectImage(tt.name) %>');">
+            </div>
+
+            <div class="test-body">
+              <h6><%= tt.name %></h6>
+              <p><%= tt.description || "No description." %></p>
+
+              <div class="test-footer">
+                <div class="price">₹ <%= tt.price %></div>
+                <small class="text-muted">per test</small>
+              </div>
+            </div>
+
+          </div>
+
+        <% }) %>
+
+      </div>
+
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <label>Date</label>
+          <input type="date" name="date" class="form-control" required>
+        </div>
+
+        <div class="col-md-6">
+          <label>Time</label>
+          <input type="time" name="time" class="form-control" required>
+        </div>
+
+        <div class="col-12 mt-4">
+          <button class="btn btn-primary">Next</button>
+        </div>
+      </div>
+
+    </form>
+
+  </div>
+</div>
+
+<script>
+document.getElementById("bookForm").addEventListener("submit", function(e) {
+  const testType = document.getElementById("testTypeId").value;
+  if (!testType) {
+    e.preventDefault();
+    alert("Please select a test before continuing.");
+  }
+});
+
+function selectTest(id) {
+  document.querySelectorAll('.test-card').forEach(c => c.classList.remove('selected'));
+  const el = document.querySelector(`.test-card[data-id="${id}"]`);
+  if(el) el.classList.add('selected');
+  document.getElementById('testTypeId').value = id;
+}
+
+document.querySelectorAll('.test-card').forEach(c => {
+  c.addEventListener('click', () => selectTest(c.dataset.id));
+});
+
+const pre = "<%= preselect || '' %>";
+if(pre) window.onload = () => selectTest(pre);
+</script>
+
+</body>
+</html>

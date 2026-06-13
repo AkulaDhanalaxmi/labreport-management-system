@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Select Login - Medora</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background:#f5f9ff; height:100vh; margin:0; display:flex; justify-content:center; align-items:center; font-family:Arial; }
+    .container-box { width:90%; max-width:1100px; background:white; border-radius:15px; box-shadow:0 10px 30px rgba(0,0,0,0.08); display:flex; overflow:hidden; }
+    .left-img { width:55%; background: url('/public/assets/lab.jpg') center/cover no-repeat; }
+    .right-box { width:45%; padding:45px; display:flex; flex-direction:column; justify-content:center; text-align:center; }
+    .right-box h2 { font-weight:700; color:#0a2a43; margin-bottom:10px; }
+    .right-box p { color:#666; margin-bottom:30px; }
+    .login-btn { width:100%; padding:14px; background:#e9f0ff; border:none; border-radius:8px; margin-bottom:15px; font-weight:600; color:#0a2a43; transition:0.2s; }
+    .login-btn:hover { background:#d7e6ff; }
+  </style>
+</head>
+<body>
+  <div class="container-box">
+    <div class="left-img"></div>
+    <div class="right-box">
+      <h2>Welcome to SmartCare Portal</h2>
+      <p>Select your login type below</p>
+      <a href="/login?role=doctor"><button class="login-btn">Doctor Login</button></a>
+      <a href="/login?role=patient"><button class="login-btn">Patient Login</button></a>
+      <a href="/login?role=admin"><button class="login-btn">Admin Login</button></a>
+    </div>
+  </div>
+</body>
+</html>

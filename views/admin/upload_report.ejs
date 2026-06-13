@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Upload Report</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: #f4f6f9;
+      padding: 40px 0;
+      font-family: system-ui, sans-serif;
+    }
+
+    .upload-box {
+      max-width: 850px;
+      margin: auto;
+      background: #fff;
+      border-radius: 16px;
+      padding: 35px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      border-left: 4px solid #0a74ff;
+      padding-left: 10px;
+      margin: 25px 0 15px;
+      color: #0a74ff;
+    }
+
+    .value-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+
+    .label {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .btn-primary {
+      padding-left: 25px;
+      padding-right: 25px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="upload-box">
+
+  <h2 class="mb-2">Upload Report</h2>
+  <p class="text-muted">Fill in the test values and upload the report file.</p>
+
+  <!-- Patient & Test Info -->
+  <div class="row mt-4">
+    <div class="col-md-6">
+      <h5 class="section-title">Patient Details</h5>
+      <p><strong>Name:</strong> <%= test.patient.name %></p>
+      <p><strong>Email:</strong> <%= test.patient.email %></p>
+    </div>
+
+    <div class="col-md-6">
+      <h5 class="section-title">Test Details</h5>
+      <p><strong>Test:</strong> <%= test.testType.name %></p>
+
+      <% if (test.scheduledAt) { %>
+        <p><strong>Scheduled At:</strong> 
+          <%= new Date(test.scheduledAt).toLocaleString() %>
+        </p>
+      <% } %>
+    </div>
+  </div>
+
+  <form method="POST" action="/admin/generate-report" enctype="multipart/form-data">
+    <input type="hidden" name="testId" value="<%= test._id %>">
+
+    <!-- Test Values -->
+    <h5 class="section-title">Enter Test Values</h5>
+
+    <div class="value-grid">
+
+      <% if (test.testType.name.toLowerCase().includes('blood sugar')) { %>
+      
+        <div>
+          <label class="label">Fasting (mg/dL)</label>
+          <input type="number" step="any" name="fasting" class="form-control">
+        </div>
+
+        <div>
+          <label class="label">Post-Prandial (mg/dL)</label>
+          <input type="number" step="any" name="pp" class="form-control">
+        </div>
+
+      <% } %>
+
+
+      <% if (test.testType.name.toLowerCase().includes('thyroid')) { %>
+        <div>
+          <label class="label">TSH (mIU/L)</label>
+          <input type="number" step="any" name="tsh" class="form-control">
+        </div>
+
+        <div>
+          <label class="label">T3 (ng/dL)</label>
+          <input type="number" step="any" name="t3" class="form-control">
+        </div>
+
+        <div>
+          <label class="label">T4 (µg/dL)</label>
+          <input type="number" step="any" name="t4" class="form-control">
+        </div>
+
+        <div>
+          <label class="label">FT3 (pg/mL)</label>
+          <input type="number" step="any" name="ft3" class="form-control">
+        </div>
+
+        <div>
+          <label class="label">FT4 (ng/dL)</label>
+          <input type="number" step="any" name="ft4" class="form-control">
+        </div>
+      <% } %>
+
+    </div>
+
+    <!-- Summary -->
+    <h5 class="section-title mt-4">Summary / Notes</h5>
+    <textarea name="summary" class="form-control mb-4" rows="3"
+      placeholder="Enter summary or interpretation..."></textarea>
+
+    <!-- File Upload -->
+    <h5 class="section-title mt-4">Attach Report File</h5>
+    <input type="file" name="extraFile" class="form-control mb-4"
+           accept=".pdf,.jpg,.jpeg,.png">
+
+    <button class="btn btn-primary">Generate Report</button>
+
+  </form>
+
+</div>
+
+</body>
+</html>

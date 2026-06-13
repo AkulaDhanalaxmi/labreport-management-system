@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Patient Profile — Professional</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#f6f8fb; --card:#ffffff; --muted:#6b7280; --accent:#2563eb;
+    }
+    body{ background:var(--bg); color:#0b1220; font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+    .page-header{
+      background:linear-gradient(90deg, rgba(37,99,235,0.06), rgba(37,99,235,0.02));
+      padding:28px 22px; border-radius:12px; box-shadow:0 6px 18px rgba(15,23,42,0.06);
+      display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:18px;
+    }
+    .profile-meta{ display:flex; gap:12px; align-items:center;}
+    .avatar-lg{ width:82px; height:82px; border-radius:14px; background:linear-gradient(180deg,#e6f0ff,#f8fbff); display:flex; align-items:center; justify-content:center; color:var(--muted); font-weight:600; font-size:20px; }
+    .badge-pill{ background:#eef6ff; color:var(--accent); padding:6px 10px; border-radius:999px; font-weight:600; }
+    .container-main{ padding:20px 28px; max-width:1200px; margin:16px auto; }
+    .card-brief{ border-radius:10px; box-shadow:0 6px 20px rgba(15,23,42,0.04); background:var(--card); padding:16px; min-height:170px; display:flex; flex-direction:column; justify-content:space-between; }
+    .card-title{ font-weight:700; font-size:16px; margin-bottom:6px; }
+    .small-muted{ color:var(--muted); font-size:13px }
+    .green-btn{ background:#16a34a; color:#fff; border-radius:8px; padding:6px 10px; border:none }
+    .yellow-btn{ background:#f59e0b; color:#fff; border-radius:8px; padding:6px 10px; border:none }
+    .red-btn{ background:#ef4444; color:#fff; border-radius:8px; padding:6px 10px; border:none }
+    .ai-column{ width:300px; position:sticky; top:20px; height:calc(100vh - 40px); overflow:auto; padding:14px; border-radius:10px; box-shadow:0 6px 18px rgba(15,23,42,0.06); background:#fff; }
+    .layout{ display:grid; grid-template-columns: 1fr 300px; gap:20px; align-items:start; }
+    .left-col{ display:flex; flex-direction:column; gap:16px; }
+    .row-grid-3{ display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; }
+    .row-grid-2{ display:grid; grid-template-columns: repeat(2, 1fr); gap:16px; }
+    .row-grid-1{ display:grid; grid-template-columns: 1fr; gap:16px; }
+    canvas{ width:100% !important; height:170px !important; }
+    .card-legend{ display:flex; gap:8px; align-items:center; margin-top:6px; }
+    .legend-item{ display:flex; gap:8px; align-items:center; font-size:13px; color:var(--muted); }
+    .legend-color{ width:12px; height:12px; border-radius:3px; display:inline-block }
+    .clear-btn{ border:1px solid #e6eef8; background:#fff; padding:6px 10px; border-radius:8px; color:var(--muted) }
+    .placeholder-box{ height:100px; display:flex; align-items:center; justify-content:center; color:var(--muted); background:repeating-linear-gradient(45deg,#fbfdff 0, #fbfdff 10px, #fff 10px, #fff 20px); border-radius:8px }
+    .control-bar{ display:flex; gap:8px; align-items:center; margin:12px 0; }
+    .control-bar .form-select, .control-bar .form-control{ min-width:160px }
+    .export-btn{ background:#2563eb; color:#fff; padding:8px 12px; border-radius:8px; border:none }
+    .mb-0-6{ margin-bottom:6px }
+  </style>
+</head>
+<body>
+
+<% /* use uploaded avatar image (local path from your environment) */ %>
+<% const avatarSrc = "/mnt/data/1713ce62-ed64-46e7-9719-998f1f9c1aff.png"; %>
+
+<div class="container-main">
+   <a href="/patient/dashboard" class="btn btn-light mb-3">
+    ← Back to Dashboard
+  </a>
+  <div class="page-header">
+    <div style="display:flex;gap:18px;align-items:center">
+      <div class="avatar-lg"><% if (user && user.name) { %><%= (user.name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase()) %><% } else { %>P<% } %></div>
+      <div>
+        <h2 style="margin:0"><%= user && user.name ? user.name : 'Patient' %></h2>
+        <div class="profile-meta">
+          <div class="small-muted">Completed: <span class="badge-pill"><%= completedCount || 0 %></span></div>
+          <div class="small-muted">Pending: <span class="badge-pill"><%= pendingCount || 0 %></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="control-bar">
+        <select id="timeRange" class="form-select form-select-sm">
+          <option value="7">Last 7 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="365">Last 365 days</option>
+          <option value="all">All</option>
+        </select>
+        <input id="testSearch" class="form-control form-control-sm" placeholder="Search test type (e.g. RBC)">
+        <button id="exportAll" class="export-btn">Export All (PDF)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN LAYOUT : left content + ai right column -->
+  <div class="layout">
+    <div class="left-col">
+
+      <!-- Row 1 : 3 cards -->
+      <div class="row-grid-3">
+        <div class="card-brief">
+          <div>
+            <div class="card-title">BMI</div>
+            <div class="small-muted">Latest and distribution</div>
+          </div>
+          <div>
+            <canvas id="bmiDonut"></canvas>
+            <div class="card-legend">
+              <div class="legend-item"><span class="legend-color" style="background:#7c3aed"></span>Latest</div>
+              <div class="legend-item"><span class="legend-color" style="background:#06b6d4"></span>Avg</div>
+            </div>
+            <div class="small-muted mt-2">Latest: <span id="latestBMI">—</span></div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+            <button class="green-btn" data-bs-toggle="modal" data-bs-target="#bmiModal">Add</button>
+          </div>
+        </div>
+
+        <div class="card-brief" id="selectedTestCard">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div class="card-title">Selected Test</div>
+              <div class="small-muted">Bar chart (values)</div>
+            </div>
+            <div>
+              <button id="clearSelected" class="clear-btn">Clear</button>
+            </div>
+          </div>
+
+          <div id="selectedPlaceholder" class="placeholder-box">Select a test (or search) to view its values</div>
+          <div style="display:none" id="selectedChartWrap"><canvas id="selectedBar"></canvas></div>
+
+          <div class="small-muted mt-2">—</div>
+        </div>
+
+        <div class="card-brief">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div class="card-title">Heart Rate</div>
+                <div class="small-muted">BPM trend</div>
+              </div>
+              <div><button class="yellow-btn" data-bs-toggle="modal" data-bs-target="#hrModal">Add</button></div>
+            </div>
+          </div>
+          <div>
+            <canvas id="hrLine"></canvas>
+            <div class="small-muted mt-2">Latest: <span id="latestHR">—</span> BPM</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2 : 2 cards -->
+      <div class="row-grid-2">
+        <div class="card-brief">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div class="card-title">Blood Pressure</div>
+              <div class="small-muted">Systolic / Diastolic (area)</div>
+            </div>
+            <div><button class="red-btn" data-bs-toggle="modal" data-bs-target="#bpModal">Add</button></div>
+          </div>
+
+          <div>
+            <canvas id="bpArea"></canvas>
+            <div class="small-muted mt-2">Latest: <span id="latestBP">—</span></div>
+          </div>
+        </div>
+
+        <div class="card-brief">
+          <div>
+            <div class="card-title">All Test Types</div>
+            <div class="small-muted">Overview by test type (donut)</div>
+          </div>
+          <div>
+            <canvas id="allPie" style="height:170px !important"></canvas>
+            <div class="small-muted mt-2">Click a slice to filter selected test</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3 : 1 or 2 cards (comparison) -->
+      <div class="row-grid-1">
+        <div class="card-brief">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div class="card-title">Comparison Chart</div>
+              <div class="small-muted">Auto-generated when related tests exist (radar)</div>
+            </div>
+            <div><button id="genCompare" class="clear-btn">Generate</button></div>
+          </div>
+          <div>
+            <canvas id="compareRadar"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- AI Assistant sticky right column -->
+    <div class="ai-column" id="aiColumn">
+      <h5 style="margin-top:0">AI Assistant — Health Insights</h5>
+      <div id="aiSummary" class="small-muted mb-3">Auto-updates as new data is added</div>
+
+      <div id="aiDetected" style="font-size:13px;color:#111;margin-bottom:14px"></div>
+
+      <div style="border-top:1px solid #eef2f7;padding-top:12px">
+        <div class="small-muted mb-2">Recommendations:</div>
+        <div id="aiRecommendations" style="font-size:13px;color:#111;margin-bottom:16px"></div>
+        <button id="aiRegenerate" class="export-btn" style="width:100%">Regenerate</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modals for adding data (client-side) -->
+<div class="modal fade" id="bmiModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="bmiForm" class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Add BMI</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <label>Height (cm)</label>
+        <input id="heightCm" required class="form-control" type="number" min="30">
+        <label class="mt-2">Weight (kg)</label>
+        <input id="weightKg" required class="form-control" type="number" min="2">
+        <label class="mt-2">Date (optional)</label>
+        <input id="bmiDate" class="form-control" type="datetime-local">
+        <label class="mt-2">Note (optional)</label>
+        <textarea id="bmiNote" class="form-control"></textarea>
+      </div>
+      <div class="modal-footer"><button class="green-btn">Save</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade" id="hrModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="hrForm" class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Add Heart Rate</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <label>BPM</label>
+        <input id="hrValue" required class="form-control" type="number" min="20">
+        <label class="mt-2">Date (optional)</label>
+        <input id="hrDate" class="form-control" type="datetime-local">
+        <label class="mt-2">Note</label>
+        <textarea id="hrNote" class="form-control"></textarea>
+      </div>
+      <div class="modal-footer"><button class="yellow-btn">Save</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade" id="bpModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="bpForm" class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Add Blood Pressure</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <label>Systolic</label>
+        <input id="bpSystolic" required class="form-control" type="number" min="20">
+        <label class="mt-2">Diastolic</label>
+        <input id="bpDiastolic" required class="form-control" type="number" min="20">
+        <label class="mt-2">Date (optional)</label>
+        <input id="bpDate" class="form-control" type="datetime-local">
+        <label class="mt-2">Note</label>
+        <textarea id="bpNote" class="form-control"></textarea>
+      </div>
+      <div class="modal-footer"><button class="red-btn">Add BP</button></div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // -------------------------
+  // Server-provided data placeholders (EJS injected)
+  // -------------------------
+  const pendingCounts = <%- pendingCountsJSON || '{}' %>;
+  const timeSeries = <%- timeSeriesJSON || '[]' %>;
+  const snapshot = <%- snapshotCountsJSON || '{}' %>;
+  const heartRateData = <%- heartRateJSON || '[]' %>;
+  const bmiData = <%- bmiJSON || '[]' %>;
+  const bpData = <%- bpJSON || '[]' %>;
+  const tests = <%- JSON.stringify(tests || []) %>;
+
+  // sanitize arrays
+  function ensureArray(a){ try{ return Array.isArray(a)? a : JSON.parse(JSON.stringify(a) || '[]'); }catch(e){return []} }
+  const HR = ensureArray(heartRateData);
+  const BMI = ensureArray(bmiData);
+  const BP = ensureArray(bpData);
+
+  // -------------------------
+  // Helpers
+  // -------------------------
+  function safeDate(v){ const d=new Date(v); return isNaN(d.getTime())? new Date(): d; }
+  function toLabelDate(d){ return safeDate(d).toLocaleString(); }
+  function filterRange(arr, days){
+    if(days === 'all') return arr.slice();
+    const n = Number(days);
+    if(!n) return arr.slice();
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - n);
+    return arr.filter(x=> new Date(x.date) >= cutoff);
+  }
+
+  // -------------------------
+  // Chart instances
+  // -------------------------
+  let bmiDonut, selectedBar, hrLine, bpArea, allPie, compareRadar;
+
+  // Create charts with different types
+  function createDonut(ctx, labels, values){
+    return new Chart(ctx, { type:'doughnut', data:{ labels, datasets:[{data:values, backgroundColor:['#7c3aed','#06b6d4','#f97316','#10b981','#ef4444']}]}, options:{ responsive:true, maintainAspectRatio:false, cutout:'60%'} });
+  }
+  function createBar(ctx, labels, values){
+    return new Chart(ctx, { type:'bar', data:{ labels, datasets:[{ label:'Value', data:values, backgroundColor:'#2563eb' }]}, options:{ responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true}} } });
+  }
+  function createLine(ctx, labels, values, color='#2563eb'){
+    return new Chart(ctx, { type:'line', data:{ labels, datasets:[{ label:'', data:values, fill:true, backgroundColor: color+'33', borderColor:color, tension:0.3 }]}, options:{ responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true}} } });
+  }
+  function createArea(ctx, labels, sVals, dVals){
+    return new Chart(ctx, { type:'line', data:{ labels, datasets:[
+      { label:'Systolic', data:sVals, fill:true, backgroundColor:'#2563eb20', borderColor:'#2563eb' },
+      { label:'Diastolic', data:dVals, fill:true, backgroundColor:'#ef444420', borderColor:'#ef4444' }
+    ]}, options:{ responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true}} }});
+  }
+  function createPie(ctx, labels, values){
+    return new Chart(ctx, { type:'pie', data:{ labels, datasets:[{ data:values, backgroundColor:['#2563eb','#10b981','#ef4444','#7c3aed','#f59e0b'] }]}, options:{ responsive:true, maintainAspectRatio:false }});
+  }
+  function createRadar(ctx, labels, datasets){
+    return new Chart(ctx, { type:'radar', data:{ labels, datasets }, options:{ responsive:true, maintainAspectRatio:false, elements:{line:{tension:0.3}} }});
+  }
+
+  // -------------------------
+  // Render helpers
+  // -------------------------
+  function renderAll(range='30'){
+    // BMI donut — use BMI array (value property or bmi)
+    const bmiRange = filterRange(BMI, range);
+    const bmiVals = bmiRange.map(b=> Number(b.bmi ?? b.value ?? b));
+    const bmiLabels = bmiRange.map((b,i)=> 'E'+(i+1));
+    const bctx = document.getElementById('bmiDonut').getContext('2d');
+    if (bmiDonut) bmiDonut.destroy();
+    bmiDonut = createDonut(bctx, bmiLabels.length? bmiLabels : ['No data'], bmiVals.length? bmiVals : [1]);
+
+    document.getElementById('latestBMI').innerText = bmiVals.length? bmiVals[bmiVals.length-1].toFixed(1) : '—';
+
+    // Heart rate line
+    const hrRange = filterRange(HR, range);
+    const hrLabels = hrRange.map(h=> toLabelDate(h.date));
+    const hrVals = hrRange.map(h=> Number(h.value));
+    const hctx = document.getElementById('hrLine').getContext('2d');
+    if (hrLine) hrLine.destroy();
+    hrLine = createLine(hctx, hrLabels.length? hrLabels : ['No data'], hrVals.length? hrVals : [0], '#f59e0b');
+    document.getElementById('latestHR').innerText = hrVals.length? hrVals[hrVals.length-1] : '—';
+
+    // Blood pressure area
+    const bpRange = filterRange(BP, range);
+    const bpLabels = bpRange.map(b=> toLabelDate(b.date));
+    const syst = bpRange.map(b=> Number(b.systolic));
+    const dias = bpRange.map(b=> Number(b.diastolic));
+    const bpctx = document.getElementById('bpArea').getContext('2d');
+    if (bpArea) bpArea.destroy();
+    bpArea = createArea(bpctx, bpLabels.length? bpLabels : ['No data'], syst.length? syst : [0], dias.length? dias : [0]);
+    document.getElementById('latestBP').innerText = bpRange.length? (bpRange[bpRange.length-1].systolic + ' / ' + bpRange[bpRange.length-1].diastolic) : '—';
+
+    // All test types pie — from pendingCounts server object (or tests array counts)
+    const counts = (Object.keys(pendingCounts || {}).length) ? pendingCounts : computeCountsFromTests();
+    const allLabels = Object.keys(counts);
+    const allVals = allLabels.map(l => counts[l]);
+    const apctx = document.getElementById('allPie').getContext('2d');
+    if (allPie) allPie.destroy();
+    allPie = createPie(apctx, allLabels.length? allLabels : ['No data'], allVals.length? allVals : [1]);
+
+    // hook slice click to filter selected test
+    document.getElementById('allPie').onclick = function(evt){
+      const points = allPie.getElementsAtEventForMode(evt, 'nearest', {intersect:true}, true);
+      if(points.length){
+        const idx = points[0].index;
+        const label = allPie.data.labels[idx];
+        selectTestByName(label);
+      }
+    };
+
+    // Selected test remains as is unless cleared
+
+    // Comparison radar: try auto generating from a couple of common tests found in tests array
+    // We won't auto-destroy here — leave until user generates
+  }
+
+  // compute counts fallback from tests if pendingCounts empty
+  function computeCountsFromTests(){
+    const map = {};
+    (tests || []).forEach(t => {
+      const name = t.testType?.name || 'Unknown';
+      map[name] = (map[name] || 0) + 1;
+    });
+    return map;
+  }
+
+  // -------------------------
+  // Selected test controls
+  // -------------------------
+  function selectTestByName(name){
+    // find tests of that name and render a small bar of their numeric result (if reportValues present)
+    const matching = (tests || []).filter(t => (t.testType?.name || '').toLowerCase() === (name||'').toLowerCase() && t.reportValues);
+    if(!matching.length){
+      // show placeholder
+      document.getElementById('selectedPlaceholder').style.display = 'block';
+      document.getElementById('selectedChartWrap').style.display = 'none';
+      return;
+    }
+    // build data: x labels = dates, y = first numeric report field
+    const labels = matching.map(m => new Date(m.completedAt || m.updatedAt || m.createdAt || Date.now()).toLocaleString());
+    const values = matching.map(m => {
+      const firstKey = Object.keys(m.reportValues || {})[0];
+      const v = firstKey ? Number(m.reportValues[firstKey]) : 0;
+      return isNaN(v) ? 0 : v;
+    });
+
+    document.getElementById('selectedPlaceholder').style.display = 'none';
+    document.getElementById('selectedChartWrap').style.display = 'block';
+    const ctx = document.getElementById('selectedBar').getContext('2d');
+    if (selectedBar) selectedBar.destroy();
+    selectedBar = createBar(ctx, labels.length? labels : ['No data'], values.length? values : [0]);
+  }
+
+  // Clear selected test
+  document.addEventListener('DOMContentLoaded', ()=>{
+    document.getElementById('clearSelected').addEventListener('click', ()=>{
+      if (selectedBar) selectedBar.destroy();
+      document.getElementById('selectedPlaceholder').style.display = 'block';
+      document.getElementById('selectedChartWrap').style.display = 'none';
+    });
+  });
+
+  // -------------------------
+  // Comparison generator
+  // -------------------------
+  document.getElementById('genCompare').addEventListener('click', ()=>{
+    // Example: pick up to 4 test types that have numeric values and compare averages
+    const numericMap = {};
+    (tests || []).forEach(t=>{
+      if(!t.reportValues) return;
+      const firstKey = Object.keys(t.reportValues || {})[0];
+      if(!firstKey) return;
+      const v = Number(t.reportValues[firstKey]);
+      if(isNaN(v)) return;
+      const name = t.testType?.name || 'Unknown';
+      numericMap[name] = numericMap[name] || [];
+      numericMap[name].push(v);
+    });
+
+    const keys = Object.keys(numericMap).slice(0,6); // up to 6
+    if(!keys.length){
+      // empty chart (clear)
+      if(compareRadar) compareRadar.destroy();
+      compareRadar = createRadar(document.getElementById('compareRadar').getContext('2d'), ['No data'], [{ label:'', data:[0], backgroundColor:'#2563eb20'}]);
+      return;
+    }
+    const labels = keys;
+    const datasets = keys.map((k, i) => {
+      const arr = numericMap[k];
+      const avg = Math.round((arr.reduce((a,b)=>a+b,0)/arr.length) * 10)/10;
+      const cols = ['#2563eb','#10b981','#ef4444','#7c3aed','#f59e0b','#06b6d4'];
+      return { label: k, data: labels.map(_=> avg), backgroundColor: cols[i] + '30', borderColor: cols[i] };
+    });
+
+    if(compareRadar) compareRadar.destroy();
+    compareRadar = createRadar(document.getElementById('compareRadar').getContext('2d'), labels, datasets);
+  });
+
+  // -------------------------
+  // Add data client-side handlers (local only)
+  // -------------------------
+  document.getElementById('bmiForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const h = Number(document.getElementById('heightCm').value);
+    const w = Number(document.getElementById('weightKg').value);
+    if(!h || !w) return alert('Enter height & weight');
+    const bmi = Number((w / ((h/100)*(h/100))).toFixed(1));
+    const dateEl = document.getElementById('bmiDate').value;
+    const date = dateEl ? new Date(dateEl).toISOString() : new Date().toISOString();
+    BMI.push({ bmi, date });
+    const m = bootstrap.Modal.getInstance(document.getElementById('bmiModal'));
+    if(m) m.hide();
+    renderAll(document.getElementById('timeRange').value);
+  });
+
+  document.getElementById('hrForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const v = Number(document.getElementById('hrValue').value);
+    if(!v) return alert('Enter BPM');
+    const dateEl = document.getElementById('hrDate').value;
+    const date = dateEl ? new Date(dateEl).toISOString() : new Date().toISOString();
+    HR.push({ value: v, date });
+    const m = bootstrap.Modal.getInstance(document.getElementById('hrModal'));
+    if(m) m.hide();
+    renderAll(document.getElementById('timeRange').value);
+  });
+
+  document.getElementById('bpForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const s = Number(document.getElementById('bpSystolic').value);
+    const d = Number(document.getElementById('bpDiastolic').value);
+    if(!s || !d) return alert('Enter BP values');
+    const dateEl = document.getElementById('bpDate').value;
+    const date = dateEl ? new Date(dateEl).toISOString() : new Date().toISOString();
+    BP.push({ systolic: s, diastolic: d, date });
+    const m = bootstrap.Modal.getInstance(document.getElementById('bpModal'));
+    if(m) m.hide();
+    renderAll(document.getElementById('timeRange').value);
+  });
+
+  // -------------------------
+  // Search input: try to select matching test by name
+  // -------------------------
+  document.getElementById('testSearch').addEventListener('input', (e)=>{
+    const q = e.target.value.trim().toLowerCase();
+    if(!q) return;
+    // find first test type name that contains the query
+    const found = (Object.keys(pendingCounts || {})).find(k => k.toLowerCase().includes(q)) || (tests||[]).map(t=>t.testType?.name).find(n=> n && n.toLowerCase().includes(q));
+    if(found) selectTestByName(found);
+  });
+
+  // All pie click also selects test
+
+  // -------------------------
+  // AI assistant (simple heuristic)
+  // -------------------------
+  function regenerateAI(){
+    // sample summary: latest BMI/HR/BP and anomalies from tests (first numeric values that are out of range)
+    const latestBMI = BMI.length ? (BMI[BMI.length-1].bmi ?? BMI[BMI.length-1].value ?? '—') : '—';
+    const latestHR = HR.length ? HR[HR.length-1].value : '—';
+    const latestBP = BP.length ? (BP[BP.length-1].systolic + ' / ' + BP[BP.length-1].diastolic) : '—';
+    document.getElementById('aiSummary').innerText = `Latest BMI: ${latestBMI}\nLatest HR: ${latestHR} BPM\nLatest BP: ${latestBP}\nPending tests: ${Object.values(pendingCounts || {}).reduce((a,b)=>a+b,0) || 0}`;
+    // detect anomalies simple: look for numeric test results outside sample ranges (very naive)
+    const anomalies = [];
+    (tests || []).forEach(t=>{
+      if(!t.reportValues) return;
+      Object.keys(t.reportValues).forEach(k=>{
+        const v = Number(t.reportValues[k]);
+        if(isNaN(v)) return;
+        // example thresholds (very rough)
+        if(k.toLowerCase().includes('fasting') && v >= 126) anomalies.push(`${t.testType?.name}: ${k}=${v} (high)`);
+        if(k.toLowerCase().includes('hemoglobin') && v < 12) anomalies.push(`${t.testType?.name}: ${k}=${v} (low)`);
+      });
+    });
+    document.getElementById('aiDetected').innerHTML = anomalies.length ? ('Detected anomalies:<br>- ' + anomalies.join('<br>- ')) : 'No obvious anomalies detected from available numeric values.';
+    document.getElementById('aiRecommendations').innerText = anomalies.length ? 'Review abnormal results with clinician. Consider follow-up testing.' : 'No immediate recommendations. Keep monitoring and consult doctor for symptoms.';
+  }
+  document.getElementById('aiRegenerate').addEventListener('click', regenerateAI);
+
+  // -------------------------
+  // Export whole page
+  // -------------------------
+  document.getElementById('exportAll').addEventListener('click', ()=>{
+    html2canvas(document.querySelector('.container-main'), {scale:1.4}).then(canvas=>{
+      const img = canvas.toDataURL('image/png');
+      const pdf = new jspdf.jsPDF('p','pt','a4');
+      const w = pdf.internal.pageSize.getWidth();
+      const h = (canvas.height * w) / canvas.width;
+      pdf.addImage(img,'PNG', 0, 0, w, h);
+      pdf.save('profile_export.pdf');
+    });
+  });
+
+  // -------------------------
+  // init on load
+  // -------------------------
+  document.addEventListener('DOMContentLoaded', ()=>{
+    // initial render
+    renderAll(document.getElementById('timeRange').value);
+    regenerateAI();
+
+    document.getElementById('timeRange').addEventListener('change',(e)=> renderAll(e.target.value));
+
+    // make selected chart area hidden initially
+    document.getElementById('selectedChartWrap').style.display = 'none';
+  });
+</script>
+
+<!-- Bootstrap JS for modals -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

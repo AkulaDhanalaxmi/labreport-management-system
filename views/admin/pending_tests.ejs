@@ -1,0 +1,128 @@
+<%- include("../partials/header") %>
+<%- include("../partials/sidebar") %>
+
+<main class="main" style="margin-left:0 !important; padding:25px;">
+
+  <h3 class="text-center mb-4">Pending Tests</h3>
+
+  <div class="center-wrapper">
+    <div class="center-card">
+
+      <!-- SCHEDULE CARD -->
+      <div id="scheduleBox" style="display:none; margin-bottom:20px; border-left:5px solid #0a74ff; border-radius:8px; padding:20px; background:#eef4ff; box-shadow:0 3px 8px rgba(0,0,0,0.08);">
+        <h5 class="fw-bold mb-3">Schedule Test</h5>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Patient Requested Time</label>
+            <input id="patientRequested" class="form-control" readonly>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Admin Selected Time</label>
+            <input id="adminSelected" type="datetime-local" class="form-control">
+          </div>
+        </div>
+        <div class="text-end">
+          <button class="btn btn-secondary me-2" onclick="closeSchedule()">Cancel</button>
+          <button class="btn btn-primary" onclick="confirmSchedule()">Confirm</button>
+        </div>
+      </div>
+
+      <!-- MAIN TABLE -->
+      <table class="table table-hover text-center align-middle">
+        <thead class="bg-primary text-white">
+          <tr>
+            <th>Patient</th>
+            <th>Test</th>
+            <th>Booked At</th>
+            <th>Schedule</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% tests.forEach(t => { %>
+          <tr class="shadow-sm mb-2 bg-light rounded">
+            <td><strong><%= t.patient?.name %></strong><br><small class="text-muted">(<%= t.patient?.email %>)</small></td>
+            <td><%= t.testType?.name %></td>
+            <td><%= new Date(t.bookedAt).toLocaleString() %></td>
+            <td id="btn-<%= t._id %>">
+              <% if (!t.scheduledAt) { %>
+                <button class="btn btn-success btn-sm"
+                  onclick="openSchedule('<%= t._id %>', '<%= t.patientRequestedAt ? t.patientRequestedAt.toISOString() : '' %>')">
+                  Schedule
+                </button>
+              <% } else { %>
+                <span class="text-primary fw-bold">Scheduled:<br><%= new Date(t.scheduledAt).toLocaleString() %></span>
+              <% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+</main>
+
+<style>
+.center-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.center-card {
+  width: 92%;
+  max-width: 1100px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+  padding: 30px 35px;
+}
+
+.table-hover tbody tr:hover {
+  background: #eaf2ff;
+  transform: scale(1.01);
+  transition: 0.2s;
+}
+</style>
+
+<script>
+let activeTestId = null;
+
+function openSchedule(id, requestedIso) {
+  activeTestId = id;
+  document.getElementById("scheduleBox").style.display = "block";
+  document.getElementById("patientRequested").value =
+    requestedIso ? new Date(requestedIso).toLocaleString() : "No preferred time selected";
+  window.scrollTo({ top: 200, behavior: "smooth" });
+}
+
+function closeSchedule() {
+  document.getElementById("scheduleBox").style.display = "none";
+}
+
+function confirmSchedule() {
+  const scheduledAt = document.getElementById("adminSelected").value;
+  if (!scheduledAt) { alert("Please choose date & time"); return; }
+
+  fetch(`/admin/schedule/${activeTestId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ scheduledAt })
+  })
+  .then(r => r.json())
+  .then(() => {
+    document.getElementById("btn-" + activeTestId).innerHTML =
+      `<span class="text-primary fw-bold">Scheduled:<br>${new Date(scheduledAt).toLocaleString()}</span>`;
+    closeSchedule();
+  });
+}
+</script>
+<style>
+thead th {
+  color: #fff !important;
+  font-weight: 600;
+  padding: 12px;
+  font-size: 15px;
+}
+</style>
+

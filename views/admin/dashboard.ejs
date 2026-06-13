@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Dashboard — Medora</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* ---------- Theme variables (dark-first) ---------- */
+    :root{
+      --sidebar-bg: #08264a;
+      --page-bg: #071226;
+      --card-bg: #0e1622;
+      --card-border: rgba(255,255,255,0.03);
+      --muted: #9fb1c9;
+      --accent: #0a74ff;
+      --btn-upload-dark: #0a74ff;
+      --btn-upload-dark-hover: #0863d6;
+      --radius: 10px;
+      --text-light: #e6eef8;
+      --text-dark: #0b1a2b;
+      --badge-red: #ff4d4f;
+      --badge-green: #22c55e;
+    }
+
+    /* badge */
+    .badge-status { padding:.38rem .6rem; border-radius:6px; font-weight:600; font-size:.86rem; display:inline-block; }
+    .badge-not { background: var(--badge-red); color:#fff; }
+    .badge-sched { background: var(--badge-green); color:#042014; }
+
+    /* Light mode overrides */
+    body.light-mode {
+      --sidebar-bg: linear-gradient(180deg,#0a74ff,#0066d6);
+      --page-bg: #f4f8ff;
+      --card-bg: #ffffff;
+      --card-border: rgba(0,0,0,0.06);
+      --muted: #6b7280;
+      --accent: #0a74ff;
+      --text-light: #0b1a2b;
+      --text-dark: #0b1a2b;
+      --badge-red: #dc2626;
+      --badge-green: #16a34a;
+    }
+
+    html,body { height:100%; margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial; }
+    body { background: var(--page-bg); color: var(--text-light); -webkit-font-smoothing:antialiased; }
+
+    /* Sidebar */
+    .sidebar {
+      width:240px; position:fixed; left:0; top:0; bottom:0;
+      padding:18px; background:var(--sidebar-bg); color:var(--text-light); z-index:60;
+      border-right:1px solid rgba(255,255,255,0.02);
+    }
+    .sidebar .logo { font-weight:700; font-size:1.15rem; margin-bottom:8px; }
+    .sidebar nav a { color: inherit; display:block; padding:10px 12px; border-radius:8px; text-decoration:none; margin-bottom:6px; font-weight:500; }
+    .sidebar nav a.active { background: rgba(255,255,255,0.03); }
+
+    /* Top nav */
+    .top-nav {
+      position:fixed; left:240px; right:0; top:0; height:64px;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:0 18px; background: rgba(6,12,28,0.85); border-bottom:1px solid rgba(255,255,255,0.02); z-index:50;
+    }
+    body.light-mode .top-nav { background: #fff; border-bottom:1px solid rgba(0,0,0,0.06); }
+    .brand { font-weight:600; color:var(--text-light); }
+    body.light-mode .brand { color:var(--text-dark); }
+
+    /* Main */
+    .main { margin-left:240px; padding:92px 20px 28px 20px; min-height:100vh; }
+
+    /* Card (clean) */
+    .card-clean {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding:14px;
+      color: var(--text-light);
+    }
+    body.light-mode .card-clean { color: var(--text-dark); }
+    .card-clean h6 { margin-bottom:12px; font-weight:700; color:var(--text-light); }
+    body.light-mode .card-clean h6 { color:var(--text-dark); }
+    .muted { color: var(--muted); }
+
+    /* Layout */
+    .row-top { display:flex; gap:18px; align-items:flex-start; margin-bottom:16px; }
+    .col-left { flex: 0 0 38%; }
+    .col-right { flex: 1 1 62%; }
+
+    /* Analytics card internals */
+    .analytics-card .row1 { display:flex; gap:12px; align-items:stretch; margin-bottom:12px; }
+    .analytics-card .col-30 { flex: 0 0 30%; min-width:140px; }
+    .analytics-card .col-70 { flex: 1 1 70%; }
+
+    .donut-wrap { display:flex; align-items:center; justify-content:center; height:160px; }
+    .small-chart-wrap { height:160px; display:flex; align-items:center; justify-content:center; }
+/* Remove hover effect for Manage Test Types button */
+.no-hover:hover {
+  background: transparent !important;
+  color: inherit !important;
+  border-color: inherit !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+    /* Table */
+    .table-fixed { max-height:260px; overflow:auto; }
+    .table-clean thead th {
+      background: var(--card-bg);
+      color: var(--text-light);
+      border-bottom: 1px solid var(--table-head-dark);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    body.light-mode .table-clean thead th { color: var(--text-dark); }
+
+    .table-clean tbody td {
+      border-bottom:1px solid rgba(255,255,255,0.02);
+      color:var(--text-light);
+      background: transparent;
+    }
+    body.light-mode .table-clean tbody td { color: var(--text-dark); }
+
+    .table-clean thead th small { color: var(--muted); }
+
+    /* Buttons - remove outlines & unify colors */
+    .btn { outline: none !important; box-shadow: none !important; }
+    .btn:focus { box-shadow:none !important; outline: none !important; }
+
+    /* Green upload buttons (primary in this UI) */
+    .btn-success {
+      background: var(--badge-green) !important;
+      border: none !important;
+      color: #fff !important;
+    }
+    .btn-success:hover { filter: brightness(.92); transform: translateY(-1px); }
+
+    .btn-outline-light {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.06);
+      color: var(--text-light);
+    }
+    body.light-mode .btn-outline-light { border:1px solid rgba(0,0,0,0.08); color:var(--text-dark); }
+
+    /* Status badges */
+    .badge-status {
+      padding:.38rem .6rem;
+      border-radius: 6px;
+      font-weight:600;
+      font-size:.86rem;
+      display:inline-block;
+    }
+    
+    .badge-not { background: var(--badge-red); color: #fff; }
+    .badge-sched { background: var(--badge-green); color: #042014; }
+
+    /* small tweaks */
+    .tiny { font-size:.86rem; }
+    .small-btn { padding:.35rem .6rem; font-size:.88rem; border-radius:6px; }
+
+    /* Responsive */
+    @media (max-width:980px) {
+      .sidebar { transform: translateX(-260px); transition: transform .22s ease; position:fixed; }
+      .sidebar.show { transform: translateX(0); }
+      .top-nav { left:0; }
+      .main { margin-left:0; padding-top:86px; }
+      .row-top { flex-direction:column; }
+      .col-left, .col-right { flex:1 1 auto; width:100%; }
+      .analytics-card .row1 { flex-direction:row; flex-wrap:wrap; }
+      .analytics-card .col-30 { flex: 0 0 40%; }
+      .analytics-card .col-70 { flex: 0 0 60%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="logo">Medora • Admin</div>
+    <nav>
+      <a href="/admin/dashboard" class="active"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+      <a href="/admin/pending-tests"><i class="bi bi-list-task me-2"></i> Pending Tests</a>
+      <a href="/admin/pending-reports"><i class="bi bi-clock-history me-2"></i> Pending Reports</a>
+<a href="/admin/manage-test-types" class="btn btn-outline-light w-100 mt-2 no-hover">
+  Manage Test Types
+</a>
+
+      <a href="/admin/billing" class="mt-2"><i class="bi bi-currency-dollar me-2"></i> Billing</a>
+      <a href="/logout" class="mt-2"><i class="bi bi-box-arrow-right me-2"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- TOP NAV -->
+  <header class="top-nav">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button id="menu-toggle" class="btn btn-sm btn-outline-light small-btn"><i class="bi bi-list"></i></button>
+      <div class="brand">Medora Admin Panel</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="muted tiny">Welcome, Admin</div>
+
+      <!-- ICON THEME TOGGLE (moon/sun) -->
+      <button id="themeToggle" class="btn btn-outline-light btn-sm small-btn" title="Toggle theme" aria-label="Toggle theme">
+        <i id="themeIcon" class="bi bi-moon"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- Top stats -->
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <div>
+        <h3 style="margin:0 0 6px 0;">Admin Dashboard</h3>
+        <div class="muted tiny">Overview of operations, tests and revenue.</div>
+      </div>
+
+      <div class="d-flex gap-4 tiny align-items-center">
+        <div class="text-end"><div class="muted">Pending Tests</div><div class="fw-bold"><%= pendingTestsCount || 0 %></div></div>
+        <div class="text-end"><div class="muted">Completed Tests</div><div class="fw-bold"><%= stats?.completedTests || 0 %></div></div>
+        <div class="text-end"><div class="muted">Total Patients</div><div class="fw-bold"><%= stats?.patients || 0 %></div></div>
+        <div class="text-end"><div class="muted">Revenue</div><div class="fw-bold">₹ <%= revenue || 0 %></div></div>
+      </div>
+    </div>
+
+    <!-- Top Row -->
+    <div class="row-top">
+
+      <!-- LEFT: Quick Actions, Summary, Pending Reports -->
+      <div class="col-left">
+
+        <div class="card-clean mb-3">
+          <h6>Quick Actions</h6>
+          <a href="/admin/upload-report" id="uploadBtn" class="btn btn-outline-light w-100 small-btn mb-2">Upload Lab Report</a>
+          <a href="/admin/pending-tests" class="btn btn-outline-light w-100 small-btn mb-2">View Pending Tests</a>
+          <a href="/admin/manage-test-types" class="btn btn-outline-light w-100 small-btn">Manage Test Types</a>
+        </div>
+
+        <div class="card-clean mb-3">
+          <h6>Summary</h6>
+          <div class="muted tiny">Total Tests</div>
+          <div class="fw-semibold mb-2"><%= stats?.tests || 0 %></div>
+          <div class="muted tiny">Uploaded Reports</div>
+          <div class="fw-semibold"><%= stats?.uploadedReports || 0 %></div>
+        </div>
+
+        <div class="card-clean">
+          <h6>Pending Reports</h6>
+          <div class="table-fixed mt-2">
+            <table class="table table-sm table-clean mb-0">
+              <thead><tr><th>Patient</th><th>Test</th><th style="width:140px"></th></tr></thead>
+              <tbody>
+                <% (pendingReports || []).forEach(r => { %>
+                  <tr>
+                    <td><%= r.patient?.name || 'Unknown' %></td>
+                    <td><%= r.testType?.name || 'Test' %></td>
+                    <td style="white-space:nowrap">
+                      <a href="/admin/upload-report?testId=<%= r._id %>" class="btn btn-success btn-sm">Upload</a>
+                    </td>
+                  </tr>
+                <% }) %>
+                <% if(!(pendingReports || []).length) { %>
+                  <tr><td colspan="3" class="muted small">No pending reports.</td></tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: single analytics card (DONUT 30% | LINE 70%) -->
+      <div class="col-right">
+        <div class="card-clean analytics-card">
+
+          <!-- ROW 1: Donut 30% | Line 70% -->
+          <div class="row1">
+            <div class="col-30 card-clean" style="padding:8px;">
+              <div class="tiny muted">Pending vs Completed</div>
+              <div class="donut-wrap">
+                <canvas id="testStatusChart" style="width:100%; height:120px;"></canvas>
+              </div>
+            </div>
+
+            <div class="col-70 card-clean" style="padding:8px;">
+              <div class="tiny muted">Patient Growth</div>
+              <div class="small-chart-wrap">
+                <canvas id="patientsSmallChart" style="width:100%; height:120px;"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- ROW 2: Revenue bar -->
+          <div style="margin-top:6px;">
+            <div class="tiny muted mb-2">Revenue (Monthly)</div>
+            <div style="height:220px;">
+              <canvas id="revenueBarChart" style="width:100%; height:100%;"></canvas>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div> <!-- end row-top -->
+
+    <!-- SINGLE Pending Tests Table (final — only one) -->
+    <div class="card-clean mt-4">
+      <h6>Pending Tests to be Scheduled (Top 5)</h6>
+      <div class="table-fixed mt-2">
+        <table class="table table-sm table-clean mb-0">
+          <thead>
+            <tr>
+              <th>Patient</th>
+              <th>Test</th>
+              <th style="width:160px">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% (pendingTests || []).slice(0,5).forEach(t => { %>
+              <tr>
+                <td><%= t.patient?.name || (t.patientName || 'Unknown') %></td>
+                <td><%= t.testType?.name || (t.testName || 'Test') %></td>
+                <td>
+                  <% if(t.scheduled) { %>
+                    <span class="badge-status badge-sched">Scheduled</span>
+                  <% } else { %>
+                    <span class="badge-status badge-not">Not Scheduled</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+            <% if(!(pendingTests || []).length) { %>
+              <tr><td colspan="3" class="muted small">No pending tests to schedule.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- local screenshot reference -->
+    <div class="mt-3 tiny muted">Reference screenshot: <a href="sandbox:/mnt/data/758a2fce-5405-4611-8670-842d85aeb11c.png" target="_blank" style="color:var(--accent); text-decoration:underline;">/mnt/data/758a2fce-5405-4611-8670-842d85aeb11c.png</a></div>
+
+  </main>
+
+  <!-- SCRIPTS -->
+  <script>
+    // sidebar toggle (mobile)
+    const menuToggle = document.getElementById('menu-toggle');
+    const sidebar = document.getElementById('sidebar');
+    menuToggle.onclick = () => sidebar.classList.toggle('show');
+
+    // Light/Dark toggle (Icon style A: moon / sun)
+    (function(){
+      const themeToggle = document.getElementById('themeToggle');
+      const themeIcon = document.getElementById('themeIcon');
+      const LS_KEY = 'medora_theme_mode_v3';
+
+      function applyMode(mode){
+        if(mode === 'light'){
+          document.body.classList.add('light-mode');
+          themeIcon.className = 'bi bi-sun';
+        } else {
+          document.body.classList.remove('light-mode');
+          themeIcon.className = 'bi bi-moon';
+        }
+      }
+
+      const stored = localStorage.getItem(LS_KEY);
+      applyMode(stored === 'light' ? 'light' : 'dark');
+
+      themeToggle.addEventListener('click', () => {
+        const isLight = document.body.classList.toggle('light-mode');
+        applyMode(isLight ? 'light' : 'dark');
+        localStorage.setItem(LS_KEY, isLight ? 'light' : 'dark');
+      });
+    })();
+  </script>
+
+  <script>
+    // Chart helpers
+    function createGradient(ctx, startColor, endColor) {
+      const g = ctx.createLinearGradient(0,0,0,200);
+      g.addColorStop(0, startColor);
+      g.addColorStop(1, endColor || 'rgba(255,255,255,0.03)');
+      return g;
+    }
+
+    // 1) Donut (Pending vs Completed)
+    (function(){
+      const el = document.getElementById('testStatusChart');
+      if(!el) return;
+      const ctx = el.getContext('2d');
+      const pending = Number(<%= pendingTestsCount || 0 %>);
+      const completed = Number(<%= stats?.completedTests || 0 %>);
+      new Chart(ctx, {
+        type:'doughnut',
+        data:{
+          labels:['Pending','Completed'],
+          datasets:[{
+            data:[pending, completed],
+            backgroundColor:['rgba(34,197,94,0.95)','rgba(255,102,140,0.92)'], // green + pink
+            hoverOffset: 12,
+            borderWidth: 1,
+            borderColor: 'rgba(0,0,0,0.12)'
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          cutout:'64%',
+          plugins:{ legend:{ position:'top', labels:{ color: getComputedStyle(document.body).getPropertyValue('--muted') || '#9fb1c9' } } },
+          animation:{ duration:700, easing:'easeOutCubic' }
+        }
+      });
+    })();
+
+    // 2) Patient Growth line
+   // 2) Patient Growth line
+(function(){
+  const el = document.getElementById('patientsSmallChart');
+  if(!el) return;
+  const ctx = el.getContext('2d');
+  const dataPts = [5,12,18,25,32, Number(<%= stats?.patients || 0 %>)];
+
+  // BLUE gradient
+  const grad = createGradient(ctx, 'rgba(10,138,255,0.95)', 'rgba(10,138,255,0.06)');
+
+  new Chart(ctx, {
+    type:'line',
+    data:{
+      labels:['Jan','Feb','Mar','Apr','May','Jun'],
+      datasets:[{
+        label:'Patients',
+        data: dataPts,
+        fill:true,
+        backgroundColor: grad,
+        borderColor:'rgba(10,138,255,0.95)',   // BLUE LINE HERE
+        pointRadius:4,
+        tension:0.35
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales:{
+        x:{ grid:{ display:false }, ticks:{ color: getComputedStyle(document.body).getPropertyValue('--muted') }},
+        y:{ grid:{ display:false }, beginAtZero:true, ticks:{ color: getComputedStyle(document.body).getPropertyValue('--muted') }}
+      },
+      animation:{ duration:700 }
+    }
+  });
+})();
+
+    // 3) Revenue bar chart (monthly)
+    (function(){
+      const el = document.getElementById('revenueBarChart');
+      if(!el) return;
+      const ctx = el.getContext('2d');
+      const revenueVal = Number(<%= revenue || 0 %>);
+      const monthly = [2000,3500,4200,6000,7500, revenueVal];
+      new Chart(ctx, {
+        type:'bar',
+        data:{
+          labels:['Jan','Feb','Mar','Apr','May','Jun'],
+          datasets:[{
+            label:'Revenue',
+            data: monthly,
+            backgroundColor:[
+              'rgba(34,197,94,0.45)',
+              'rgba(34,197,94,0.5)',
+              'rgba(34,197,94,0.55)',
+              'rgba(34,197,94,0.6)',
+              'rgba(34,197,94,0.65)',
+              'rgba(34,197,94,1)'
+            ],
+            borderColor:'rgba(34,197,94,0.95)',
+            borderWidth:1,
+            borderRadius:6
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{ legend:{ display:false } },
+          scales:{
+            x:{ grid:{ display:false }, ticks:{ color: getComputedStyle(document.body).getPropertyValue('--muted') || '#9fb1c9' } },
+            y:{ grid:{ color:'rgba(255,255,255,0.02)' }, beginAtZero:true, ticks:{ color: getComputedStyle(document.body).getPropertyValue('--muted') || '#9fb1c9' } }
+          },
+          animation:{ duration:800 }
+        }
+      });
+    })();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,58 @@
+/* =============================== */
+/* GLOBAL THEME VARIABLES          */
+/* =============================== */
+:root {
+  --page-bg: #071226;
+  --card-bg: #0e1622;
+  --text-light: #e6eef8;
+  --text-dark: #0b1a2b;
+  --muted: #9fb1c9;
+  --accent: #0a74ff;
+  --card-border: rgba(255,255,255,0.08);
+}
+
+body {
+  background: var(--page-bg);
+  color: var(--text-light);
+}
+
+/* LIGHT MODE */
+body.light-mode {
+  --page-bg: #f4f8ff;
+  --card-bg: #ffffff;
+  --text-light: #0b1a2b;
+  --muted: #6b7280;
+  --card-border: rgba(0,0,0,0.08);
+}
+
+/* GLOBAL CARD */
+.card-clean {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-light);
+}
+
+/* GLOBAL TABLE */
+.table-clean thead th {
+  background: var(--card-bg);
+  color: var(--text-light);
+}
+
+.table-clean tbody td {
+  color: var(--text-light);
+}
+
+body.light-mode .table-clean tbody td,
+body.light-mode .table-clean thead th {
+  color: var(--text-dark);
+}
+
+/* BUTTONS */
+.btn-outline-light {
+  border: 1px solid rgba(255,255,255,0.2);
+  color: var(--text-light);
+}
+body.light-mode .btn-outline-light {
+  border: 1px solid rgba(0,0,0,0.2);
+  color: var(--text-dark);
+}

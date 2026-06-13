@@ -1,0 +1,62 @@
+
+<!doctype html>
+<html>
+<head>
+  <title>Test History</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="p-4" style="background:#f2fbf8; font-family:Inter, sans-serif;">
+ 
+  <div class="container card p-4 shadow-sm" style="max-width:900px;">
+    <h3 class="mb-3">Past Lab Tests</h3>
+
+    <table class="table table-bordered">
+      <thead class="table-light">
+        <tr>
+          <th>Date</th>
+          <th>Test</th>
+          <th>Status</th>
+          <th>Report</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% if (historyTests.length === 0) { %>
+          <tr><td colspan="4" class="text-center text-muted">No tests found.</td></tr>
+        <% } %>
+
+        <% historyTests.forEach(t => { %>
+        <tr>
+          <td><%= new Date(t.createdAt).toLocaleDateString() %></td>
+
+          <td><%= t.testType ? t.testType.name : "—" %></td>
+
+          <td>
+            <% if (t.finalStatus === "pending") { %>
+              <span class="badge bg-warning text-dark">Pending</span>
+
+            <% } else if (t.finalStatus === "serious") { %>
+              <span class="badge bg-danger">Serious</span>
+
+            <% } else if (t.finalStatus === "warning") { %>
+              <span class="badge bg-warning text-dark">Warning</span>
+
+            <% } else { %>
+              <span class="badge bg-success">Normal</span>
+            <% } %>
+          </td>
+
+          <td>
+            <a href="/patient/report-summary/<%= t._id %>" 
+               class="btn btn-sm btn-outline-primary">View</a>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <a href="/patient/dashboard" class="btn btn-secondary mt-3">Back to Dashboard</a>
+  </div>
+</body>
+</html>

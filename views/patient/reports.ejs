@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Reports</title>
+  <link rel="stylesheet"
+   href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"/>
+
+  <style>
+    body {
+      padding-top: 140px;  /* prevents touching the navbar */
+      background: #f4f8ff;
+    }
+
+    .report-card {
+      min-width: 300px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      padding: 20px;
+      margin-right: 20px;
+      background: white;
+    }
+
+    .scroll-row {
+      display: flex;
+      overflow-x: auto;
+      padding-bottom: 20px;
+    }
+
+    .scroll-row::-webkit-scrollbar {
+      height: 8px;
+    }
+    .scroll-row::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body class="p-4">
+  <div class="container-main">
+   <a href="/patient/dashboard" class="btn btn-light mb-3">
+    ← Back to Dashboard
+  </a>
+  
+<h3 class="mb-3">Your Reports</h3>
+
+<div class="scroll-row">
+  <% reports.forEach(r => { %>
+    <div class="report-card">
+      <h5><b><%= r.testType?.name %></b></h5>
+      <div class="text-muted mb-2">
+        <%= new Date(r.createdAt).toLocaleDateString() %>
+      </div>
+
+      <p>Status: 
+        <% if (r.finalStatus === "normal") { %>
+          <span class="text-success fw-bold">Normal</span>
+        <% } else if (r.finalStatus === "warning") { %>
+          <span class="text-warning fw-bold">Borderline</span>
+        <% } else { %>
+          <span class="text-danger fw-bold">Serious</span>
+        <% } %>
+      </p>
+
+      <a href="/patient/report-summary/<%= r._id %>"
+         class="btn btn-primary w-100">View Report</a>
+    </div>
+  <% }) %>
+</div>
+
+</body>
+</html>

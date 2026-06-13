@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Manage Test Types</title>
+
+  <!-- BOOTSTRAP CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
+        rel="stylesheet">
+
+  <!-- Your Custom CSS -->
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+
+<!-- SIDEBAR / NAVBAR -->
+<%- include("../partials/sidebar") %>
+<% if (message) { %>
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <%= message %>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+<% } %>
+
+
+<div style="margin-left:260px; padding:30px; max-width:1100px;">
+
+
+  <h3 class="fw-bold mb-4">Manage Test Types</h3>
+
+  <!-- ADD TEST TYPE -->
+<!-- ADD TEST TYPE HORIZONTAL -->
+<div class="card shadow-sm p-4 mb-5">
+  <h5 class="fw-semibold mb-3">Add New Test Type</h5>
+
+  <form action="/admin/test-type/add" method="POST" class="row g-3 align-items-end">
+    <div class="col-md-5">
+      <label class="form-label fw-semibold">Test Name</label>
+      <input name="name" class="form-control" required>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label fw-semibold">Price (₹)</label>
+      <input type="number" name="price" class="form-control" required>
+    </div>
+
+    <div class="col-md-2">
+      <button class="btn btn-primary w-100">Add Test Type</button>
+    </div>
+  </form>
+</div>
+
+  <!-- TEST TYPES TABLE -->
+  <div class="card shadow-sm p-4">
+    <h5 class="fw-semibold mb-3">All Test Types</h5>
+
+    <table class="table table-bordered table-striped align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th style="width:50px;">#</th>
+          <th>Test Name</th>
+          <th style="width:150px;">Price (₹)</th>
+          <th style="width:150px;">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% testTypes.forEach((t, i) => { %>
+          <tr>
+            <td><%= i + 1 %></td>
+            <td class="fw-semibold"><%= t.name %></td>
+            <td>₹ <%= t.price %></td>
+
+            <td>
+              <div class="d-flex gap-2">
+
+                <!-- EDIT BUTTON -->
+                <button class="btn btn-warning btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#editModal-<%= t._id %>">
+                  Edit
+                </button>
+
+                <!-- DELETE BUTTON -->
+                <a href="/admin/test-type/delete/<%= t._id %>"
+                   class="btn btn-danger btn-sm"
+                   onclick="return confirm('Delete this test type?')">
+                  Delete
+                </a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- EDIT MODAL -->
+          <div class="modal fade" id="editModal-<%= t._id %>" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+
+                <div class="modal-header">
+                  <h5 class="modal-title">Edit Test Type</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <form action="/admin/test-type/update/<%= t._id %>" method="POST">
+                  <div class="modal-body">
+
+                    <div class="mb-3">
+                      <label class="form-label">Test Name</label>
+                      <input name="name" 
+                             value="<%= t.name %>" 
+                             class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Price (₹)</label>
+                      <input name="price"
+                             type="number"
+                             value="<%= t.price %>"
+                             class="form-control"
+                             required>
+                    </div>
+
+                  </div>
+                  
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary">Save Changes</button>
+                  </div>
+                </form>
+
+              </div>
+            </div>
+          </div>
+
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- BOOTSTRAP JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
